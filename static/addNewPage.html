@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Modern is a Premium Bootstrap Admin Template, It's responsive, clean coded and mobile friendly">
+  <meta name="keywords" content="bootstrap, admin, dashboard, flat admin template, responsive," />
+  <title>Modern - Premium Bootstrap Admin Template</title>
+
+  <!-- ========== Css Files ========== -->
+  <link href="css/root.css" rel="stylesheet">
+  <style type="text/css">
+    body{background-image: url(img/fake.jpg);background-size:cover;}
+  </style>
+  </head>
+  <body>
+    <div class="login-form">
+      <form action="addNewPage.html">
+        <div class="top">
+         <!--<img src="img/Modern-icon.png" alt="icon" class="icon">-->
+          <h1>Create Work</h1>
+          <h4>Name your new work now !</h4>
+        </div>
+        <div class="form-area">
+          <div class="group">
+            <input id="10" type="text" class="form-control" placeholder="Workname">
+            <i class="fa fa-plus"></i>
+          </div>
+          <!-- 命名后跳转 -->
+          <button type="button" class="btn btn-default btn-block"  onclick="creatework()" >CREATE NOW</button>
+        </div>
+      </form>
+    </div>
+
+    <script language="javascript" type="text/javascript">
+      function creatework(){
+        let url = 'http://127.0.0.1:8081/creatework';
+        var ProName=document.getElementById('10');
+    
+        var xhr = new XMLHttpRequest();
+        var data = 'ProName='+ ProName.value;
+    
+        // alert(ProName.value);
+    
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send(data);
+        window.location.href="http://localhost:7000/#/";
+      }
+    </script>
+</body>
+</html>
