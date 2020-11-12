@@ -4,19 +4,185 @@ const webpack = require('webpack');
 var archiver = require("archiver");
 var zipper = require("zip-local");
 const config = require('./webpack.config');
-// const compiler = webpack(config);
+
+var mysql      = require('mysql');
+var connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'root',
+  password : 'root',
+  database : 'anime'
+});
+
+connection.connect();
+ 
+connection.query('SELECT 1 + 1 AS solution', function (error, results, fields) {
+  if (error) throw error;
+  console.log('The solution is: ', results[0].solution);
+});
 var app = express();
+
+
+const router = require('./login')
+const registerService = require('./register')
+app.use('/', router)
+app.use('/register', registerService)
+
+// const compiler = webpack(config);
+
 
 //执行webpack编译
 // complier.run((err, stats) => {
 // 	console.log(stats.toJson());
 // });
 
+app.post('/register', (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin","*");
+  let data='';
+  console.log('接收到注册请求');
+  //接收数据
+  req.on('data',function(chunk){
+      data+=chunk;
+  });
+  //接受完毕
+  req.on('end',function(){
+      // console.log('数据接收完毕:',data);
+      //username=jay&age=22&addr=newyork
+      var arr=data.split('&');
+      let UserID,Password;//保存前端传递来的数据
+      arr.forEach(function(item){
+          let arr0=item.split('=');
+          if(arr0[0]=='UserID'){
+              UserID=arr0[1];
+          }else if(arr0[0]=='Password'){
+              Password=arr0[1];
+          }
+      });
+      console.log(UserID,Password);
+      //将数据存入数据库
+      saveData(UserID,Password,function(msg){
+          res.write(JSON.stringify(msg));
+          res.end(JSON.stringify({
+            UserID : UserID
+          }));
+      });
+  });
+})
+
+//将数据存入数据库
+function saveData(UserID, Password,fn){
+  /*
+  //1.创建链接
+  let conn=mysql.createConnection({
+      host:'localhost',             //主机名
+      user:"root",                  //数据库账户名
+      password:"root",              //数据库密码
+      database:"anime"              //要连接的数据名称
+  });
+  //2.建立链接
+  conn.connect();
+  */
+
+  // let sql="SELECT * FROM student;";;
+  let sql=`insert into User (UserID,Password) values ('${UserID}', '${Password}');`;
+  //3.操作 (增/删/改/查)insert into 用户信息表 (UserID, Password) values ('${UserID}','${Password}');`
+  //参数一：sql语句  参数二:回调函数
+  connection.query(sql,function(err,result){
+      if(!err){
+          console.log('数据库访问成功：',result);
+          fn({code:200,msg:"注册成功"});
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
+  //4.断开链接
+  //connection.end();
+}
+
+app.post('/create', function(req, res){
+  res.setHeader("Access-Control-Allow-Origin","*");
+  res.setHeader('Content-type',"text/json;charset=utf8");
+  let data='';
+  console.log('接收到请求');
+//将数据存入数据库
+
+
+  //let sql=`select * from 用户信息表 where UserID='${UserID}' and Password='${Password}';`;
+  var sql = 'select * from Project;';
+  var str = " ";
+
+  connection.query(sql,function(err,result){
+      if(!err){
+          str = JSON.stringify(result);
+        console.log(result); //数据库查询结果返回到result中
+console.log(str);
+          res.end(str);
+          
+      }
+      else{
+          console.log(err);
+      }
+  });
+
+  //connection.end(); 
+})
+
+app.post('/creatework', function(req, res){
+  res.setHeader("Access-Control-Allow-Origin","*");
+    let data='';
+    console.log('接收到创建请求');
+    //接收数据
+    req.on('data',function(chunk){
+        data+=chunk;
+    });
+    //接受完毕
+    req.on('end',function(){
+        // console.log('数据接收完毕:',data);
+        //username=jay&age=22&addr=newyork
+        var arr=data.split('&');
+        let ProName;//保存前端传递来的数据
+        arr.forEach(function(item){
+            let arr0=item.split('=');
+            if(arr0[0]=='ProName'){
+                ProName=arr0[1];
+            }
+        });
+        console.log(ProName);
+        //将数据存入数据库
+        saveWorkData(ProName,function(msg){
+            res.write(JSON.stringify(msg));
+            res.end();
+        });
+    });
+})
+
+
+//将数据存入数据库
+function saveWorkData(ProName,fn){
+  let sql = `insert into Project ( UserID,ProName ) values ('105@qq.com','${ProName}');`;
+  
+  //3.操作 (增/删/改/查)
+  //参数一：sql语句  参数二:回调函数
+  connection.query(sql,function(err,result){
+      if(!err){
+          console.log('数据库访问成功：', result);
+          fn({code:200,msg:"创建成功"});
+      }else{
+          console.log('数据库访问失败：', err);
+      }
+  });
+  //4.断开链接
+  //conn.end();
+}
+
+
 var bodyParser = require('body-parser');//用于req.body获取值的
 //处理文件上传
 var multiparty = require('multiparty');
 let fs = require('fs');
 let path = require('path');
+const { StayCurrentLandscapeRounded } = require('@material-ui/icons');
 app.use(bodyParser.json());
 
 // 创建 application/x-www-form-urlencoded 编码解析
@@ -37,7 +203,7 @@ app.all("*",function(req,res,next){
 })
 
 //设置查找静态文件的地方
-app.use(express.static('static'));
+app.use(express.static(path.join(__dirname, 'static')));
 
 app.post('/public/image', function(req, res){
     console.log("img uploaded!!!");
@@ -343,57 +509,8 @@ app.get('/download', function(req, res){
 // setter 假数据
 var setting = {
     "setterInfo": {
-      "totalN": 1,
-      "setters": [
-        {
-          "totalN": 1,
-          "index": 0,
-          "width": 320,
-          "height": 200,
-          "x": 208,
-          "y": 108,
-          "pic": "http://127.0.0.1:8081/public/image/a.jpg",
-          "vid": "",
-          "color": "transparent",
-          "content": "",
-          "animeInfo": {
-            "reveal": "Zoom",
-            "setMarquee": false,
-            "changingContentArr": [],
-            "changingInterval": 0,
-            "trailingContentArr": [],
-            "trailingInterval": 0,
-            "trailerWidth": 0,
-            "trailerHeight": 0,
-            "hoverScalePicOnly": false,
-            "hoverScale": 1,
-            "hoverContentArr": [],
-            "startScrollTop": 0,
-            "endScrollTop": 0,
-            "startXY": {
-              "x": 208,
-              "y": 108
-            },
-            "endXY": {
-              "x": 0,
-              "y": 0
-            },
-            "deltaX": null,
-            "deltaY": null,
-            "startSize": {
-              "width": 320,
-              "height": 200
-            },
-            "endSize": {
-              "width": 0,
-              "height": 0
-            },
-            "deltaWidth": null,
-            "deltaHeight": null,
-            "hasScrollEffect": false
-          }
-        }
-      ]
+      "totalN": 0,
+      "setters": []
     }
   };
 
@@ -401,24 +518,56 @@ var setting = {
 app.get('/setterInfo/:id', function(req, res){
     //获取项目id
     const projectId = req.params.id;
-    //TODO：使用项目id从数据库项目表中的setterInfo字段读出字符串类型的数据setterInfo赋给setting.setterInfo
-    //setting.setterInfo = 读出字符串转换为json格式
+    //使用项目id从数据库项目表中的setterInfo字段读出字符串类型的数据setterInfo赋给setting.setterInfo
+    let sql=`select setterInfo from Project where ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+          if(result.length !== 0){
+          //有已保存的设计：返回查询结果
+             setting.setterInfo = result[0];
+          }
+          console.log('setterInfo - get 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"setterInfo成功"}));
+          //res.end(JSON.stringify(setting.setterInfo))
+          res.end(setting.setterInfo);
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
+    
 
 
-    res.writeHead(200, {'content-type': 'application/json'});
-    res.end(JSON.stringify(setting.setterInfo))
+    //res.writeHead(200, {'content-type': 'application/json'});
+    //res.end(JSON.stringify(setting.setterInfo))
+    //res.end(setting.setterInfo);
 });
 
 //前端上传用于给preview显示的layoutSetter信息
 app.post('/setterInfo/:id', function(req, res){
   //获取项目id
   const projectId = req.params.id;
-  //TODO：使用项目id将字符串类型的数据setterInfo存入数据库项目表中对应id的setterInfo字段
+  const jsonString = JSON.stringify(req.body);
+  //使用项目id将字符串类型的数据setterInfo存入数据库项目表中对应id的setterInfo字段
+  let sql = `UPDATE Project SET setterInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+  //let sql=`select setterInfo from Project where ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+          //setting.setterInfo = result;
+          console.log('setterInfo - post 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"setterInfo成功"}));
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
 
   //demo
   console.log("setterInfo - post - req.body.totalN = " + req.body.totalN);
   //虽然在前端进行过json文件的字符串化，但是后端接到的是json格式而非字符串格式
-  setting.setterInfo = req.body;
+  //setting.setterInfo = req.body;
 })
 
 var canvasInfo = {
@@ -435,24 +584,57 @@ app.get('/canvasInfo/:id', function(req, res){
     //获取项目id
     const projectId = req.params.id;
     //TODO：使用项目id从数据库项目表中的canvasInfo字段读出字符串类型的数据canvasInfo赋给canvasInfo.canvasInfo
+    let sql=`select canvasInfo from Project where ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+        if(result.length !== 0){
+          //有已保存的设计：返回查询结果
+          canvasInfo.canvasInfo = result[0];
+          }
+          console.log('canvasInfo - get 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"canvasInfo成功"}));
+          res.end(JSON.stringify(canvasInfo.canvasInfo))
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
+
     //canvasInfo.canvasInfo = 读出字符串转换为json格式
 
-    res.writeHead(200, {'content-type': 'application/json'});
-    res.end(JSON.stringify(canvasInfo.canvasInfo))
+    //res.writeHead(200, {'content-type': 'application/json'});
+    //res.end(JSON.stringify(canvasInfo.canvasInfo))
+    //res.end(canvasInfo.canvasInfo);
 });
 
 //前端上传全局跟随信息
 app.post('/canvasInfo/:id', function(req, res){
   //获取项目id
   const projectId = req.params.id;
-  //TODO：使用项目id将字符串类型的数据setterInfo存入数据库项目表中对应id的setterInfo字段
+  //TODO：使用项目id将字符串类型的数据canvasInfo存入数据库项目表中对应id的canvasInfo字段
+  //let sql=`select canvasInfo from Project where ProID='${projectId}';`;
+  const jsonString = JSON.stringify(req.body);
+  let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+          canvasInfo.canvasInfo = result;
+          console.log('canvasInfo - post 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"canvasInfo成功"}));
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
+
 
   //demo
   console.log("canvasInfo - post - req.body = " + req.body);
-  canvasInfo.canvasInfo = req.body
+  //canvasInfo.canvasInfo = req.body
 })
 
-var canvasLenght = {
+var canvasLength = {
     "canvasLength": {
     "canvasHeight": 712
     }
@@ -462,11 +644,28 @@ var canvasLenght = {
 app.get('/canvasLength/:id', function(req, res){
     //获取项目id
     const projectId = req.params.id;
-    //TODO：使用项目id从数据库项目表中的canvasLength字段读出字符串类型的数据canvasLength赋给 canvasLength.canvasLength
+    //使用项目id从数据库项目表中的canvasLength字段读出字符串类型的数据canvasLength赋给 canvasLength.canvasLength
+    let sql=`select canvasLength from Project where ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+        if(result.length !== 0){
+          //有已保存的设计：返回查询结果
+          canvasLength.canvasLength = result[0];
+          }
+          console.log('canvasLength - get 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"canvasLength成功"}));
+          res.end(JSON.stringify(canvasLenght.canvasLength))
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
     //canvasLength.canvasLength = 读出字符串转换为json格式
 
-    res.writeHead(200, {'content-type': 'application/json'});
-    res.end(JSON.stringify(canvasLenght.canvasLength))
+    //res.writeHead(200, {'content-type': 'application/json'});
+    //res.end(JSON.stringify(canvasLenght.canvasLength))
+    //res.end(canvasLength.canvasLength);
 })
 
 //canvasLength的信息 , 返回假数据
@@ -474,210 +673,34 @@ app.post('/canvasLength/:id', function(req, res){
   //获取项目id
   const projectId = req.params.id;
   //TODO：使用项目id将字符串类型的数据canvasLength存入数据库项目表中对应id的 canvasLength 字段
-
+  const jsonString = JSON.stringify(req.body);
+  let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+  //let sql=`select canvasLength from Project where ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+          //setting.setterInfo = result;
+          console.log('canvasLength - post 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"canvasLength成功"}));
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
   //demo
   console.log("canvasLength - post - req.body = " + req.body);
-  canvasLength.canvasLength = req.body
+  //canvasLength.canvasLength = req.body
 })
 
 var webcanvasInfo = {
   "webcanvasInfo": {
-    "LayoutSetterArray": [
-      1,
-      1,
-      1
-    ],
-    "setterColorArray": [
-      {
-        "r": 245,
-        "g": 166,
-        "b": 35,
-        "a": 1
-      },
-      {
-        "r": 74,
-        "g": 144,
-        "b": 226,
-        "a": 1
-      },
-      "transparent"
-    ],
+    "LayoutSetterArray": [],
+    "setterColorArray": [],
     "setterContentArray": [],
-    "setterPicArray": [
-      "",
-      "",
-      "http://127.0.0.1:8081/public/image/tokyo.jpg"
-    ],
-    "setterVidArray": [
-      "",
-      "",
-      ""
-    ],
-    "setterAniInfoArray": [
-      {
-        "reveal": "",
-        "setMarquee": false,
-        "changingContentArr": [],
-        "changingInterval": 0,
-        "trailingContentArr": [
-          {
-            "name": "内容0",
-            "activeKeyColor": {
-              "r": 184,
-              "g": 233,
-              "b": 134,
-              "a": 1
-            },
-            "activeKeyContent": "",
-            "activeKeyPic": ""
-          }
-        ],
-        "trailingInterval": 0,
-        "trailerWidth": 100,
-        "trailerHeight": 100,
-        "hoverScalePicOnly": false,
-        "hoverScale": 1,
-        "hoverContentArr": [],
-        "startScrollTop": 0,
-        "endScrollTop": 0,
-        "startXY": {
-          "x": 175,
-          "y": 366
-        },
-        "endXY": {
-          "x": 375,
-          "y": 566
-        },
-        "deltaX": null,
-        "deltaY": null,
-        "startSize": {
-          "width": 320,
-          "height": 200
-        },
-        "endSize": {
-          "width": 320,
-          "height": 200
-        },
-        "deltaWidth": null,
-        "deltaHeight": null,
-        "hasScrollEffect": false
-      },
-      {
-        "reveal": "",
-        "setMarquee": false,
-        "changingContentArr": [
-          {
-            "name": "内容0",
-            "activeKeyColor": {
-              "r": 74,
-              "g": 144,
-              "b": 226,
-              "a": 1
-            },
-            "activeKeyContent": "",
-            "activeKeyPic": ""
-          },
-          {
-            "name": "内容1",
-            "activeKeyColor": {
-              "r": 208,
-              "g": 2,
-              "b": 27,
-              "a": 1
-            },
-            "activeKeyContent": "",
-            "activeKeyPic": ""
-          }
-        ],
-        "changingInterval": 7,
-        "trailingContentArr": [],
-        "trailingInterval": 0,
-        "trailerWidth": 0,
-        "trailerHeight": 0,
-        "hoverScalePicOnly": false,
-        "hoverScale": 1,
-        "hoverContentArr": [],
-        "startScrollTop": 0,
-        "endScrollTop": 0,
-        "startXY": {
-          "x": 385,
-          "y": 119
-        },
-        "endXY": {
-          "x": 585,
-          "y": 319
-        },
-        "deltaX": null,
-        "deltaY": null,
-        "startSize": {
-          "width": 320,
-          "height": 200
-        },
-        "endSize": {
-          "width": 320,
-          "height": 200
-        },
-        "deltaWidth": null,
-        "deltaHeight": null,
-        "hasScrollEffect": false
-      },
-      {
-        "reveal": "",
-        "setMarquee": false,
-        "changingContentArr": [],
-        "changingInterval": 0,
-        "trailingContentArr": [],
-        "trailingInterval": 0,
-        "trailerWidth": 0,
-        "trailerHeight": 0,
-        "hoverScalePicOnly": false,
-        "hoverScale": 1,
-        "hoverContentArr": [],
-        "startScrollTop": 0,
-        "endScrollTop": 0,
-        "startXY": {
-          "x": 0,
-          "y": 0
-        },
-        "endXY": {
-          "x": -1,
-          "y": -1
-        },
-        "deltaX": 0,
-        "deltaY": 0,
-        "startSize": {
-          "width": 0,
-          "height": 0
-        },
-        "endSize": {
-          "width": -1,
-          "height": -1
-        },
-        "deltaWidth": 0,
-        "deltaHeight": 0,
-        "hasScrollEffect": false
-      }
-    ],
-    "setterPosSizeArray": [
-      {
-        "x": 175,
-        "y": 366,
-        "width": 320,
-        "height": 200
-      },
-      {
-        "x": 385,
-        "y": 119,
-        "width": 320,
-        "height": 200
-      },
-      {
-        "x": 775,
-        "y": 77,
-        "width": 320,
-        "height": 200
-      }
-    ]
+    "setterPicArray": [],
+    "setterVidArray": [],
+    "setterAniInfoArray": [],
+    "setterPosSizeArray": []
   }
 }
 
@@ -686,10 +709,28 @@ app.get('/webcanvasInfo/:id', function(req, res){
   //获取项目id
   const projectId = req.params.id;
   //TODO：使用项目id从数据库项目表中的 webcanvasInfo 字段读出字符串类型的数据 webcanvasInfo 赋给 webcanvasInfo.webcanvasInfo
+  let sql=`select webcanvasInfo from Project where ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+        if(result.length !== 0){
+          //有已保存的设计：返回查询结果
+          webcanvasInfo.webcanvasInfo = result[0];
+          }
+          console.log('webcanvasInfo - get 数据库访问成功：',result);
+          //res.write(JSON.stringify({code:200,msg:"webcanvasInfo成功"}));
+          res.writeHead(200, {'content-type': 'application/json'});
+          res.end(JSON.stringify(webcanvasInfo.webcanvasInfo))
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
   //webcanvasInfo.webcanvasInfo = 读出字符串转换为json格式
 
-  res.writeHead(200, {'content-type': 'application/json'});
-  res.end(JSON.stringify(webcanvasInfo.webcanvasInfo))
+  //res.writeHead(200, {'content-type': 'application/json'});
+  //res.end(JSON.stringify(webcanvasInfo.webcanvasInfo))
+  //res.end(webcanvasInfo.webcanvasInfo);
 })
 
 //webcanvasInfo 的信息 , 返回假数据
@@ -697,10 +738,23 @@ app.post('/webcanvasInfo/:id', function(req, res){
 //获取项目id
 const projectId = req.params.id;
 //TODO：使用项目id将字符串类型的数据canvasLength存入数据库项目表中对应id的 canvasLength 字段
-
+//let sql=`select webcanvasInfo from Project where ProID='${projectId}';`;
+const jsonString = JSON.stringify(req.body);
+let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+    connection.query(sql,function(err,result){
+      if(!err){
+          //setting.setterInfo = result;
+          console.log('webcanvasInfo - post 数据库访问成功：',result);
+          res.write(JSON.stringify({code:200,msg:"webcanvasInfo成功"}));
+          //res.end('OK');
+      }else{
+          console.log('数据库访问失败：',err);
+          res.end('NO');
+      }
+  });
 //demo
 console.log("webcanvasInfo - post - req.body = " + req.body);
-webcanvasInfo.webcanvasInfo = req.body
+//webcanvasInfo.webcanvasInfo = req.body
 })
 
 
