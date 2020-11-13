@@ -160,16 +160,16 @@ app.post('/creatework', function(req, res){
 
 //将数据存入数据库
 function saveWorkData(ProName,fn){
-  let sql = `insert into Project ( UserID,ProName ) values ('105@qq.com','${ProName}');`;
+  let sql = `insert into Project ( UserID,ProName ) values ('1054051797@qq.com','${ProName}');`;
   
   //3.操作 (增/删/改/查)
   //参数一：sql语句  参数二:回调函数
   connection.query(sql,function(err,result){
       if(!err){
-          console.log('数据库访问成功：', result);
+          console.log('saveworkdata - 数据库访问成功：', result);
           fn({code:200,msg:"创建成功"});
       }else{
-          console.log('数据库访问失败：', err);
+          console.log('saveworkdata - 数据库访问失败：', err);
       }
   });
   //4.断开链接
@@ -303,174 +303,137 @@ function get_file_content(filepath){
 /****************************************************** 代码下载 *****************************************************/
 
 //demo: 替换变量
-const totalSetter = 2;
-const setters = [
-  {
-    "totalN": 2,
-    "index": 0,
-    "width": 320,
-    "height": 200,
-    "x": 175,
-    "y": 366,
-    "pic": "",
-    "vid": "",
-    "color": {
-      "r": 245,
-      "g": 166,
-      "b": 35,
-      "a": 1
-    },
-    "content": "",
-    "animeInfo": {
-      "reveal": "",
-      "setMarquee": false,
-      "changingContentArr": [],
-      "changingInterval": 0,
-      "trailingContentArr": [
-        {
-          "name": "内容0",
-          "activeKeyColor": {
-            "r": 184,
-            "g": 233,
-            "b": 134,
-            "a": 1
-          },
-          "activeKeyContent": "",
-          "activeKeyPic": ""
-        }
-      ],
-      "trailingInterval": 0,
-      "trailerWidth": 100,
-      "trailerHeight": 100,
-      "hoverScalePicOnly": false,
-      "hoverScale": 1,
-      "hoverContentArr": [],
-      "startScrollTop": 0,
-      "endScrollTop": 0,
-      "startXY": {
-        "x": 175,
-        "y": 366
-      },
-      "endXY": {
-        "x": 375,
-        "y": 566
-      },
-      "deltaX": null,
-      "deltaY": null,
-      "startSize": {
-        "width": 320,
-        "height": 200
-      },
-      "endSize": {
-        "width": 320,
-        "height": 200
-      },
-      "deltaWidth": null,
-      "deltaHeight": null,
-      "hasScrollEffect": false
-    }
-  },
-  {
-    "totalN": 2,
-    "index": 1,
-    "width": 320,
-    "height": 200,
-    "x": 385,
-    "y": 119,
-    "pic": "",
-    "vid": "",
-    "color": {
-      "r": 74,
-      "g": 144,
-      "b": 226,
-      "a": 1
-    },
-    "content": "",
-    "animeInfo": {
-      "reveal": "",
-      "setMarquee": false,
-      "changingContentArr": [
-        {
-          "name": "内容0",
-          "activeKeyColor": {
-            "r": 74,
-            "g": 144,
-            "b": 226,
-            "a": 1
-          },
-          "activeKeyContent": "",
-          "activeKeyPic": ""
-        },
-        {
-          "name": "内容1",
-          "activeKeyColor": {
-            "r": 208,
-            "g": 2,
-            "b": 27,
-            "a": 1
-          },
-          "activeKeyContent": "",
-          "activeKeyPic": ""
-        }
-      ],
-      "changingInterval": 7,
-      "trailingContentArr": [],
-      "trailingInterval": 0,
-      "trailerWidth": 0,
-      "trailerHeight": 0,
-      "hoverScalePicOnly": false,
-      "hoverScale": 1,
-      "hoverContentArr": [],
-      "startScrollTop": 0,
-      "endScrollTop": 0,
-      "startXY": {
-        "x": 385,
-        "y": 119
-      },
-      "endXY": {
-        "x": 585,
-        "y": 319
-      },
-      "deltaX": null,
-      "deltaY": null,
-      "startSize": {
-        "width": 320,
-        "height": 200
-      },
-      "endSize": {
-        "width": 320,
-        "height": 200
-      },
-      "deltaWidth": null,
-      "deltaHeight": null,
-      "hasScrollEffect": false
-    }
-  }
-];
+let totalSetter = 0;
+let setters = [];
 
-const downloadCanvasInfo = {
+let downloadCanvasInfo = {
   "trailingContentArr": [],
   "trailingInterval": 0,
   "trailerWidth": 100,
   "trailerHeight": 100
 };
 
-const canvasHeight = 712;
+let canvasHeight = 712;
 
 //下载代码接口：传入项目id，下载做好网页的压缩包
 app.get('/download', function(req, res){
   //前端传来的项目id
-  projectId = req.query.id;
+  //projectId = req.query.id;
+    
+	// 1. 先做替换
+  var data = fs.readFileSync("./src/Preview/Preview-template.js","utf-8");
+  var finalPreview = data;
   //TODO：在数据库中根据项目id查询出项目的json数据：totalSetter，setters，canvasInfo，canvasHeight
   //其中totalSetter和setters从setterInfo字段的json字符串中拆分出
   //canvasInfo从canvasInfo字段中取出，canvasHeight从canvasHeight字段中取出
+  let sql=`select setterInfo,canvasInfo,canvasLength from Project where ProName="food";`;
+  connection.query(sql,function(err,result){
+    if(!err){
+      var dataString = JSON.stringify(result);
+      var data = JSON.parse(dataString);
+      console.log("download - dataString = " + dataString);
+      if(data.length !== 0 && data[0].setterInfo !== null){
+        //有已保存的设计：返回查询结果
+        console.log("download - setterInfo 结果非空！result[0] = " + data[0].setterInfo)
+        console.log("typeof(data[0].setterInfo) = " + typeof(data[0].setterInfo));
+        const setterInfo = JSON.parse(data[0].setterInfo);
+        totalSetter = setterInfo.totalN;
+        setters = setterInfo.setters;
+        console.log('download - setterInfo 数据库访问成功：',setterInfo.totalN);
+      }
+      if(data.length !== 0 && data[0].canvasInfo !== null){
+        //有已保存的设计：返回查询结果
+        console.log("download - canvasInfo 结果非空！data[0].canvasInfo = " + data[0].canvasInfo)
+        downloadCanvasInfo = data[0].canvasInfo;
+        //finalPreview = finalPreview.replace(/__canvasInfo__/g, JSON.stringify(downloadCanvasInfo))
+        console.log('download - canvasInfo 数据库访问成功：',data[0].canvasInfo);
+      }
+      if(data.length !== 0 && data[0].canvasLength !== null){
+        //有已保存的设计：返回查询结果
+        console.log("download - canvasLength 结果非空！data[0].canvasLength = " + data[0].canvasLength)
+        canvasHeight = JSON.parse(data[0].canvasLength);
+        //finalPreview = finalPreview.replace(/__canvasHeight__/g, JSON.stringify(canvasHeight))
+        console.log('download - canvasLength 数据库访问成功：',data);  
+      }  
+      finalPreview = finalPreview.replace(/__totalSetter__/g, JSON.stringify(totalSetter)).replace(/__setters__/g, JSON.stringify(setters)).replace(/__canvasInfo__/g, JSON.stringify(downloadCanvasInfo)).replace(/__canvasHeight__/g, JSON.stringify(canvasHeight))     
+    }else{
+        console.log('数据库访问失败：',err);
+    }
+    fs.writeFileSync("./src/Preview/Preview.js",finalPreview, "utf-8")
+
+    // 2. 在node中直接使用webpack
+    const complier = webpack(config);
   
-	// 1. 先做替换
-  var data = fs.readFileSync("./src/Preview/Preview-template.js","utf-8");
+    console.log('start to webpack preview')
+    //执行webpack编译
+    complier.run((err, stats) => {
+      if (err) {
+        console.log('webpack had err!!!')
+        console.log(err);
+        res.writeHead(200, {
+          'Content-Type' : 'application/text',
+          })
+        res.end('webpack failed')
+        return;
+      }
+      console.log('webpack success!!!')
+  
+      var name = 'code.zip'
+      var path = './' + name
+      
+      zipper.sync.zip("./dist").compress().save(path);
+  
+      var size = fs.statSync(path).size;
+      var f = fs.createReadStream(path);
+    
+      res.writeHead(200, {
+        'Content-Type' : 'application/force-download',
+        'Content-Disposition' : 'attachment; filename=' + name,
+        'Content-Length' : size
+      })
+      f.pipe(res)
+    });
 
-	var result = data.replace(/__totalSetter__/g, JSON.stringify(totalSetter)).replace(/__setters__/g, JSON.stringify(setters)).replace(/__canvasInfo__/g, JSON.stringify(downloadCanvasInfo)).replace(/__canvasHeight__/g, JSON.stringify(canvasHeight));
+});
+/*
+sql=`select canvasInfo from Project where ProName="food";`;
+connection.query(sql,function(err,result){
+  if(!err){
+    var dataString = JSON.stringify(result);
+    var data = JSON.parse(dataString);
+    if(data.length !== 0 && data[0].canvasInfo !== null){
+      //有已保存的设计：返回查询结果
+      console.log("download - canvasInfo 结果非空！data[0].canvasInfo = " + data[0].canvasInfo)
+      downloadCanvasInfo = data[0].canvasInfo;
+      finalPreview = finalPreview.replace(/__canvasInfo__/g, JSON.stringify(downloadCanvasInfo))
+      }
+      console.log('download - canvasInfo 数据库访问成功：',data);
+  }else{
+      console.log('数据库访问失败：',err);
+  }
+});
 
-	fs.writeFileSync("./src/Preview/Preview.js",result, "utf-8")
+sql=`select canvasLength from Project where ProName="food";`;
+connection.query(sql,function(err,result){
+  if(!err){
+    var dataString = JSON.stringify(result);
+    var data = JSON.parse(dataString);
+    if(data.length !== 0 && data[0].canvasLength !== null){
+      //有已保存的设计：返回查询结果
+      console.log("download - canvasLength 结果非空！data[0].canvasLength = " + data[0].canvasLength)
+      canvasHeight = data[0].canvasLength;
+      finalPreview = finalPreview.replace(/__canvasHeight__/g, JSON.stringify(canvasHeight))
+      }
+      console.log('download - canvasLength 数据库访问成功：',data);
+  }else{
+      console.log('数据库访问失败：',err);
+  }
+});
+*/
+
+	//var result = data.replace(/__totalSetter__/g, JSON.stringify(totalSetter)).replace(/__setters__/g, JSON.stringify(setters)).replace(/__canvasInfo__/g, JSON.stringify(downloadCanvasInfo)).replace(/__canvasHeight__/g, JSON.stringify(canvasHeight));
+/*
+	fs.writeFileSync("./src/Preview/Preview.js",finalPreview, "utf-8")
 
 	// 2. 在node中直接使用webpack
 	const complier = webpack(config);
@@ -489,7 +452,7 @@ app.get('/download', function(req, res){
 		}
 		console.log('webpack success!!!')
 
-		var name = 'h5.zip'
+		var name = 'code.zip'
 		var path = './' + name
 		
 		zipper.sync.zip("./dist").compress().save(path);
@@ -502,8 +465,8 @@ app.get('/download', function(req, res){
 			'Content-Disposition' : 'attachment; filename=' + name,
 			'Content-Length' : size
 		})
-		f.pipe(res)
-	});
+    f.pipe(res)
+	});*/
 })
 
 // setter 假数据
@@ -519,14 +482,18 @@ app.get('/setterInfo/:id', function(req, res){
     //获取项目id
     const projectId = req.params.id;
     //使用项目id从数据库项目表中的setterInfo字段读出字符串类型的数据setterInfo赋给setting.setterInfo
-    let sql=`select setterInfo from Project where ProID='${projectId}';`;
+    let sql=`select setterInfo from Project where ProName="food";`;
     connection.query(sql,function(err,result){
       if(!err){
-          if(result.length !== 0){
+        var dataString = JSON.stringify(result);
+        var data = JSON.parse(dataString);
+          if(data.length !== 0 && data[0] !== null){
           //有已保存的设计：返回查询结果
-             setting.setterInfo = result[0];
+          console.log("setterInfo - get 结果非空！result[0] = " + data[0].setterInfo)
+
+             setting.setterInfo = data[0].setterInfo;
           }
-          console.log('setterInfo - get 数据库访问成功：',result);
+          console.log('setterInfo - get 数据库访问成功：',data[0].setterInfo);
           res.write(JSON.stringify({code:200,msg:"setterInfo成功"}));
           //res.end(JSON.stringify(setting.setterInfo))
           res.end(setting.setterInfo);
@@ -550,7 +517,7 @@ app.post('/setterInfo/:id', function(req, res){
   const projectId = req.params.id;
   const jsonString = JSON.stringify(req.body);
   //使用项目id将字符串类型的数据setterInfo存入数据库项目表中对应id的setterInfo字段
-  let sql = `UPDATE Project SET setterInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+  let sql = `UPDATE Project SET setterInfo = '${jsonString}' WHERE ProName="food";`;
   //let sql=`select setterInfo from Project where ProID='${projectId}';`;
     connection.query(sql,function(err,result){
       if(!err){
@@ -584,14 +551,18 @@ app.get('/canvasInfo/:id', function(req, res){
     //获取项目id
     const projectId = req.params.id;
     //TODO：使用项目id从数据库项目表中的canvasInfo字段读出字符串类型的数据canvasInfo赋给canvasInfo.canvasInfo
-    let sql=`select canvasInfo from Project where ProID='${projectId}';`;
+    let sql=`select canvasInfo from Project where ProName="food";`;
     connection.query(sql,function(err,result){
       if(!err){
-        if(result.length !== 0){
+        var dataString = JSON.stringify(result);
+        var data = JSON.parse(dataString);
+        if(data.length !== 0 && data[0] !== null){
           //有已保存的设计：返回查询结果
-          canvasInfo.canvasInfo = result[0];
+          console.log("canvasInfo - get 结果非空！result.canvasInfo = " + data[0].canvasInfo)
+          canvasInfo.canvasInfo = data[0].canvasInfo;
           }
-          console.log('canvasInfo - get 数据库访问成功：',result);
+          console.log('canvasInfo - get 数据库访问成功：',data[0]);
+          console.log('canvasInfo - JSON.stringify(canvasInfo.canvasInfo) = ' + JSON.stringify(canvasInfo.canvasInfo));
           res.write(JSON.stringify({code:200,msg:"canvasInfo成功"}));
           res.end(JSON.stringify(canvasInfo.canvasInfo))
           //res.end('OK');
@@ -611,11 +582,13 @@ app.get('/canvasInfo/:id', function(req, res){
 //前端上传全局跟随信息
 app.post('/canvasInfo/:id', function(req, res){
   //获取项目id
+  console.log("canvasInfo - post - entered!");
   const projectId = req.params.id;
   //TODO：使用项目id将字符串类型的数据canvasInfo存入数据库项目表中对应id的canvasInfo字段
   //let sql=`select canvasInfo from Project where ProID='${projectId}';`;
   const jsonString = JSON.stringify(req.body);
-  let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+  console.log("jsonString = " + jsonString);
+  let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProName="food";`;
     connection.query(sql,function(err,result){
       if(!err){
           canvasInfo.canvasInfo = result;
@@ -645,16 +618,20 @@ app.get('/canvasLength/:id', function(req, res){
     //获取项目id
     const projectId = req.params.id;
     //使用项目id从数据库项目表中的canvasLength字段读出字符串类型的数据canvasLength赋给 canvasLength.canvasLength
-    let sql=`select canvasLength from Project where ProID='${projectId}';`;
+    let sql=`select canvasLength from Project where ProName="food";`;
     connection.query(sql,function(err,result){
       if(!err){
-        if(result.length !== 0){
+        var dataString = JSON.stringify(result);
+        var data = JSON.parse(dataString);
+        if(data.length !== 0 && data[0].canvasLength !== null){
           //有已保存的设计：返回查询结果
-          canvasLength.canvasLength = result[0];
+          console.log("canvasLength - get 结果非空！result[0] = " + data[0].canvasLength)
+
+          canvasLength.canvasLength = data[0].canvasLength;
           }
-          console.log('canvasLength - get 数据库访问成功：',result);
+          console.log('canvasLength - get 数据库访问成功：',data[0]);
           res.write(JSON.stringify({code:200,msg:"canvasLength成功"}));
-          res.end(JSON.stringify(canvasLenght.canvasLength))
+          res.end(JSON.stringify(canvasLength.canvasLength))
           //res.end('OK');
       }else{
           console.log('数据库访问失败：',err);
@@ -674,7 +651,7 @@ app.post('/canvasLength/:id', function(req, res){
   const projectId = req.params.id;
   //TODO：使用项目id将字符串类型的数据canvasLength存入数据库项目表中对应id的 canvasLength 字段
   const jsonString = JSON.stringify(req.body);
-  let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+  let sql = `UPDATE Project SET canvasLength = '${jsonString}' WHERE ProName="food";`;
   //let sql=`select canvasLength from Project where ProID='${projectId}';`;
     connection.query(sql,function(err,result){
       if(!err){
@@ -709,14 +686,18 @@ app.get('/webcanvasInfo/:id', function(req, res){
   //获取项目id
   const projectId = req.params.id;
   //TODO：使用项目id从数据库项目表中的 webcanvasInfo 字段读出字符串类型的数据 webcanvasInfo 赋给 webcanvasInfo.webcanvasInfo
-  let sql=`select webcanvasInfo from Project where ProID='${projectId}';`;
+  let sql=`select webcanvasInfo from Project where ProName="food";`;
     connection.query(sql,function(err,result){
       if(!err){
-        if(result.length !== 0){
+        var dataString = JSON.stringify(result);
+        var data = JSON.parse(dataString);
+        if(data.length !== 0 && data[0] !== null){
           //有已保存的设计：返回查询结果
-          webcanvasInfo.webcanvasInfo = result[0];
+          console.log("webcanvasInfo - get 结果非空！result[0] = " + data[0])
+
+          webcanvasInfo.webcanvasInfo = data[0];
           }
-          console.log('webcanvasInfo - get 数据库访问成功：',result);
+          console.log('webcanvasInfo - get 数据库访问成功：',data);
           //res.write(JSON.stringify({code:200,msg:"webcanvasInfo成功"}));
           res.writeHead(200, {'content-type': 'application/json'});
           res.end(JSON.stringify(webcanvasInfo.webcanvasInfo))
@@ -735,12 +716,15 @@ app.get('/webcanvasInfo/:id', function(req, res){
 
 //webcanvasInfo 的信息 , 返回假数据
 app.post('/webcanvasInfo/:id', function(req, res){
+//connection.query(`update Project set webcanvasInfo = 'aaa' where ProName="food"`)
 //获取项目id
 const projectId = req.params.id;
 //TODO：使用项目id将字符串类型的数据canvasLength存入数据库项目表中对应id的 canvasLength 字段
 //let sql=`select webcanvasInfo from Project where ProID='${projectId}';`;
+console.log("req.body = " + req.body);
 const jsonString = JSON.stringify(req.body);
-let sql = `UPDATE Project SET canvasInfo = '${jsonString}' WHERE ProID='${projectId}';`;
+console.log("jsonString = " + jsonString);
+let sql = `UPDATE Project SET webcanvasInfo = '${jsonString}' WHERE ProName="food";`;
     connection.query(sql,function(err,result){
       if(!err){
           //setting.setterInfo = result;

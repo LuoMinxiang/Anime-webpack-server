@@ -15,9 +15,9 @@ class Preview extends React.Component{
         super(props);
         this.state = {
             //所有setter总数
-            totalSetter : 2,
+            totalSetter : 1,
             //所有setter的信息数组
-            setters : [{"totalN":2,"index":0,"width":320,"height":200,"x":175,"y":366,"pic":"","vid":"","color":{"r":245,"g":166,"b":35,"a":1},"content":"","animeInfo":{"reveal":"","setMarquee":false,"changingContentArr":[],"changingInterval":0,"trailingContentArr":[{"name":"内容0","activeKeyColor":{"r":184,"g":233,"b":134,"a":1},"activeKeyContent":"","activeKeyPic":""}],"trailingInterval":0,"trailerWidth":100,"trailerHeight":100,"hoverScalePicOnly":false,"hoverScale":1,"hoverContentArr":[],"startScrollTop":0,"endScrollTop":0,"startXY":{"x":175,"y":366},"endXY":{"x":375,"y":566},"deltaX":null,"deltaY":null,"startSize":{"width":320,"height":200},"endSize":{"width":320,"height":200},"deltaWidth":null,"deltaHeight":null,"hasScrollEffect":false}},{"totalN":2,"index":1,"width":320,"height":200,"x":385,"y":119,"pic":"","vid":"","color":{"r":74,"g":144,"b":226,"a":1},"content":"","animeInfo":{"reveal":"","setMarquee":false,"changingContentArr":[{"name":"内容0","activeKeyColor":{"r":74,"g":144,"b":226,"a":1},"activeKeyContent":"","activeKeyPic":""},{"name":"内容1","activeKeyColor":{"r":208,"g":2,"b":27,"a":1},"activeKeyContent":"","activeKeyPic":""}],"changingInterval":7,"trailingContentArr":[],"trailingInterval":0,"trailerWidth":0,"trailerHeight":0,"hoverScalePicOnly":false,"hoverScale":1,"hoverContentArr":[],"startScrollTop":0,"endScrollTop":0,"startXY":{"x":385,"y":119},"endXY":{"x":585,"y":319},"deltaX":null,"deltaY":null,"startSize":{"width":320,"height":200},"endSize":{"width":320,"height":200},"deltaWidth":null,"deltaHeight":null,"hasScrollEffect":false}}],
+            setters : [{"totalN":1,"index":0,"width":320,"height":200,"x":227,"y":190,"pic":"","vid":"","color":{"r":245,"g":166,"b":35,"a":1},"content":"<p>bbbbbbbbbbbbbbbbbbbbbbbbbbb</p>","animeInfo":{"reveal":"","setMarquee":true,"changingContentArr":[],"changingInterval":0,"trailingContentArr":[],"trailingInterval":0,"trailerWidth":0,"trailerHeight":0,"hoverScalePicOnly":false,"hoverScale":1,"hoverContentArr":[],"startScrollTop":0,"endScrollTop":0,"startXY":{"x":227,"y":190},"endXY":{"x":427,"y":390},"deltaX":null,"deltaY":null,"startSize":{"width":320,"height":200},"endSize":{"width":320,"height":200},"deltaWidth":null,"deltaHeight":null,"hasScrollEffect":false}}],
             //预览窗口和画布的宽度比
             wrate : (1500/1024),
             //当前常变动效内容项索引数组（每个setter都有自己的当前内容项索引）
@@ -33,7 +33,7 @@ class Preview extends React.Component{
             trailLeft : 0,
             //设置了下滚动效的setter数组
             scrolledSetterArr : [],
-            canvasHeight : 712,
+            canvasHeight : {"canvasHeight":712},
             //文字走马灯marginLeft
             marqueeLeft : 0,
 
